@@ -68,6 +68,7 @@ module.exports = {
               { new: true }
             )
       )
+      .then(() => res.status(200).json('Thought deleted'))
       .catch((err) => res.status(500).json(err));
   },
   // Update a thought
@@ -86,15 +87,11 @@ module.exports = {
   },
 
   // Add a reaction to a thought
-  addReaction(req, res) {
-    let reaction = {
-      reactionBody: req.reactionBody,
-      username: req.username
-    }
+  createReaction(req, res) {
     Thought.findOneAndUpdate(
       { _id: req.params.thoughtId },
-      { $push: { reactions: reaction } },
-      { runValidators: true, new: true }
+      { $addToSet: { reactions: req.body } },
+      { new: true }
     )
       .then((thought) =>
         !thought
@@ -106,7 +103,7 @@ module.exports = {
       .catch((err) => res.status(500).json(err));
   },
   // Remove reaction from a thought
-  removeReaction(req, res) {
+  deleteReaction(req, res) {
     Thought.findOneAndUpdate(
       { _id: req.params.thoughtId },
       { $pull: { reactions: { reactionId: req.body.reactionId } } },

@@ -10,14 +10,17 @@ module.exports = {
   // Get a user
   getSingleUser(req, res) {
     User.findOne({ _id: req.params.userId })
-      .populate({path: 'thoughts', select: ('-__v')})
-      .populate({path: 'friends', select: ('-__v')})
+      .populate('thoughts')
+      .populate('friends')
       .then((user) =>
         !user
           ? res.status(404).json({ message: 'No user with that ID' })
           : res.json(user)
       )
-      .catch((err) => res.status(500).json(err));
+      .catch((err) => {
+        console.log(err);
+        res.status(500).json(err);
+      });
   },
   // Create a user
   createUser(req, res) {
@@ -57,28 +60,36 @@ module.exports = {
   createFriend(req, res) {
     User.findOneAndUpdate(
       { _id: req.params.userId },
-      { $push: { friends: req.params.friendId} },
+      { $push: { friends: req.params.friendId }},
       { runValidators: true, new: true }
     )
       .then((user) =>
         !user
           ? res.status(404).json({ message: 'No user with this id!' })
-          : res.json(user)
+          : User.findOneAndUpdate(
+              { _id: req.params.friendId },
+              { $push: { friends: req.params.userId }},
+              { runValidators: true, new: true })
       )
+      .then((resp) => res.status(200).json(resp))
       .catch((err) => res.status(500).json(err));
   },
   // Delete friend
   deleteFriend(req, res) {
     User.findOneAndUpdate(
       { _id: req.params.userId },
-      { $pull: { friends: req.params.friendId} },
+      { $pull: { friends: req.params.friendId }},
       { runValidators: true, new: true }
     )
       .then((user) =>
         !user
           ? res.status(404).json({ message: 'No user with this id!' })
-          : res.json(user)
+          : User.findOneAndUpdate(
+              { _id: req.params.friendId },
+              { $pull: { friends: req.params.userId }},
+              { runValidators: true, new: true })
       )
+      .then((resp) => res.status(200).json(resp))
       .catch((err) => res.status(500).json(err));
   }
 };
